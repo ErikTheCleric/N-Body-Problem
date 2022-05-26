@@ -6,6 +6,16 @@
 # ... or how planets with moons are affected. The idea would be to have a text file to
 # ... upload information to, so that files could be uploaded with ease.
 
+# I found this article published by Princeton that talks about simulating the N body
+# ... problem in different ways for a computer where the brute force way is to use the
+# ... standard equation for accurate results that take a long time (O(n^2): this is
+# ... becuase we have to go through the data to get the sum of the forces for each mass.
+# ... I'll implement this version first, as I really meant for this program to only deal
+# ... with a few masses at a time and not a cluster of masses as the article recommends
+# ... for a larger amount of masses, though it may be something that I attempt in the
+# ... future. Link: https://physics.princeton.edu//~fpretori/Nbody/intro.htm
+
+
 import os
 import numpy as np
 from scipy.integrate import odeint
@@ -60,6 +70,15 @@ def organizeInformationFromFile(info):
             rX0.append(info[i])                 # for the second val, it is a position val
         if i % 3 == 2:
             vX0.append(info[i])                 # for the third val, it is the velocity val
-    print(masses, rX0, vX0)
+    #print(masses, rX0, vX0)
     
 organizeInformationFromFile(lines)              # formulate the data into the diff lists
+
+y0 = np.concatenate((rX0, vX0))                 # The starting conditions of the simulation
+print(y0)
+
+# Definition of the n body equation
+def nBodyEquation(stateVec, time, gravity, masses):
+    # This will define the n body problem
+
+
