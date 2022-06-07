@@ -58,27 +58,86 @@ time = np.arange(0,maxTime, stepping)           # The time from 0 to maxTime in 
                                                 # ... increments
 
 masses = []                                     # The masses of the objects
-rX0 = []                                        # the inital positions of the masses
+pX0 = []                                        # the inital positions of the masses
 vX0 = []                                        # the inital velocitiies of the masses
-                                                
+
+pos = []                                      # We note the position for the masses
+vel = []                                      # We note the velocities for the masses
+
+for i in masses:
+    # For each of the masses, we need to initially fill the pos and vel with zeroes to start
+    # ... this will be updated later in the acceleration function and velocity calculations
+    pos[i] = np.array([[0.,0.,0.] for j in range(maxTime)])
+    vel[i] = np.array([[0.,0.,0.] for j in range(maxTime)])
+
+test = [[10, 5, 8], [0, 0, 0], [7, 8 , 9]]                                                
 def organizeInformationFromFile(info):
-    # We want to organize the information into different things such as masses, rX0, and vX0
+    # We want to organize the information into different things such as masses, pX0, and vX0
     for i in range(len(info)):
         if i % 3 == 0:
-            masses.append(info[i])              # If its the first value, then that is a mass
+            masses.append(int(info[i]))          # If its the first value, then that is a mass
         if i % 3 == 1:
-            rX0.append(info[i])                 # for the second val, it is a position val
+            print(info[i])
+            data = info[i].split(',')
+            pX0.append(info[i])                 # for the second val, it is a position val
         if i % 3 == 2:
-            vX0.append(info[i])                 # for the third val, it is the velocity val
-    #print(masses, rX0, vX0)
+            data = info[i].split(',')
+            vX0.append(data)                 # for the third val, it is the velocity val
+    print(pX0)
+    print(test)
+
     
 organizeInformationFromFile(lines)              # formulate the data into the diff lists
 
-y0 = np.concatenate((rX0, vX0))                 # The starting conditions of the simulation
-print(y0)
+
+for i in masses:
+    # Now that we have the different masses set with there position values and pos / vel set
+    # ... we can update the information that we preset to be zeroes and fill in the initial
+    # ... datat that we pulled from the file.
+    #n = pX0[i]
+    pos[i][0] = int(pX0[i])                          # These are the starting conditions of the 
+    vel[i][0] = int(vX0[i])                          # ... simulation (the first values)
+#y0 = np.concatenate((pX0, vX0))                 # The starting conditions of the simulation
+#print(y0)
+
 
 # Definition of the n body equation
-def nBodyEquation(stateVec, time, gravity, masses):
-    # This will define the n body problem
+def accelerationCalc(p):
+    # Given a set of objects, find the derivations of x, y, and z
+    numberOfObjects = len(masses)
+
+    mNum = masses         # We make a set of masses equal to the number
+    planet_dv = list(range(numberOfObjects))    # ... from the file
+    # init the planet dev to be 0
+    
+    for i in mNum:
+        for j in mNum:
+            if(i != j):                         # We don't run the accel function on itself
+                planet_dv[i] += -9.8 * mNum[j] * (p[i] - p[j]) / (np.sqrt((p[i][0] - p[j][0])**2 + (p[i][1] - p[j][1])**2 + (p[i][2] - p[j][2])**2)**3)
+    #print(len(mNum))
+    return planet_dv
 
 
+# Running the simulation -------------------------------------------------------------------
+for i in range(steps - 1):
+    dv = []                                     # The derivations of the different points
+    # Find the accelerations
+    for j in masses:
+        dv[j] = accelerations(range(pos[0][i], pos[-1][i]))         # Go to every pos and access the i location
+
+    # update the next step of the velocity
+    for j in masses:
+        vel[j][i+1] = vel[j][i] + dv[j] * stepping
+
+    # update the position values for the next step
+    for j in masses:
+        pos[j][i+1] = pos[j][i] + vel[j][i] * stepping
+
+# Now that we have run the simulation, all the data is stored in pos[][] and vel[][] so now
+# ... display these values
+for m in masses:
+    plt.plot([i[0] for i in pos[m]], [j[0] for j in pos[m]], [k[0] for k in pos[m]])
+
+# Now we just show this to the screen and then close
+plt.show()
+plt.close()
