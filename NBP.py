@@ -61,22 +61,25 @@ time = np.arange(0,maxTime, stepping)           # The time from 0 to maxTime in 
 masses = []                                     # The masses of the objects
 pX0 = []                                        # the inital positions of the masses
 vX0 = []                                        # the inital velocitiies of the masses
+colors = []                                     # The colors of the lines to be projected
                                              
 def organizeInformationFromFile(info):
     # We want to organize the information into different things such as masses, pX0, and vX0
-    infoLines = int((len(info))/3)                   # This is the amount of lines that we will read
+    infoLines = int((len(info))/4)                   # This is the amount of lines that we will read
     m = np.empty(infoLines, dtype=int)
     p = np.empty(shape=(infoLines,3),dtype=int)
     v = np.empty(shape=(infoLines,3),dtype=int)
+    c = []
     
     for i in range(infoLines):
-        m[i] = int(info[i*3])
-        p[i] = np.loadtxt(fileName, dtype = int, delimiter = ',', skiprows = (i*3)+1, max_rows = 1)
-        v[i] = np.loadtxt(fileName, dtype = int, delimiter = ',', skiprows = (i*3)+2, max_rows = 1)
+        m[i] = int(info[i*4])
+        p[i] = np.loadtxt(fileName, dtype = int, delimiter = ',', skiprows = (i*4)+1, max_rows = 1)
+        v[i] = np.loadtxt(fileName, dtype = int, delimiter = ',', skiprows = (i*4)+2, max_rows = 1)
+        c.append(str(info[(i*4) + 3]))
 
-    return m,p,v
+    return m,p,v,c
     
-masses, pX0, vX0 = organizeInformationFromFile(lines)              # formulate the data into the diff lists
+masses, pX0, vX0, colors = organizeInformationFromFile(lines)   # formulate the data into the diff lists
 
 # For each of the masses, we need to initially fill the pos and vel with zeroes to start
 # ... this will be updated later in the acceleration function and velocity calculations
@@ -90,12 +93,8 @@ for i in range(len(masses)):
     # Now that we have the different masses set with there position values and pos / vel set
     # ... we can update the information that we preset to be zeroes and fill in the initial
     # ... datat that we pulled from the file.
-    #n = pX0[i]
-    #print(len(masses))
     pos[0][i] = pX0[i]                          # These are the starting conditions of the 
     vel[0][i] = vX0[i]                          # ... simulation (the first values)
-    #print(pos[0])
-
 
 # Definition of the n body equation
 def accelerationCalc(p, t):
@@ -132,7 +131,6 @@ for i in range(maxTime - 1):
     for j in range(len(masses)):
         pos[i+1][j] = pos[i][j] + vel[i][j] * stepping
     #print("Got Here", i)
-print("Got Here", pos)
 
 # Now that we have run the simulation, all the data is stored in pos[][] and vel[][] so now
 # ... display these values
@@ -141,11 +139,9 @@ for i in range(len(masses)):
     for j in range(maxTime):
         posToDisp[i][j] = pos[j][i]
 
-#for m in range(len(masses)):
-#    plt.plot([i[0] for i in pos[m]], [j[1] for j in pos[m]], [k[2] for k in pos[m]], '^', color = "red", lw = 0.05, markersize = 0.01, alpha = 0.5)
-plt.plot([i[0] for i in posToDisp[0]], [j[1] for j in posToDisp[0]], [k[2] for k in posToDisp[0]] , '^', lw = 0.05, markersize = 0.01, alpha=0.5)
-plt.plot([i[0] for i in posToDisp[1]], [j[1] for j in posToDisp[1]], [k[2] for k in posToDisp[1]] , '^', lw = 0.05, markersize = 0.01, alpha=0.5)
-plt.plot([i[0] for i in posToDisp[2]], [j[1] for j in posToDisp[2]], [k[2] for k in posToDisp[2]] , '^', lw = 0.05, markersize = 0.01, alpha=0.5)
+# print out the plot and the colors here
+for m in range(len(masses)):
+    plt.plot([i[0] for i in posToDisp[m]], [j[1] for j in posToDisp[m]], [k[2] for k in posToDisp[m]] , '^', color = colors[m], lw = 0.05, markersize = 0.01, alpha=0.5)
 
 plt.axis('on')
 
