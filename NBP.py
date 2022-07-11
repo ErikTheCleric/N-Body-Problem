@@ -26,6 +26,7 @@ import os
 import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
 
 # Reading from a file ----------------------------------------------------------------------
@@ -45,7 +46,8 @@ with open(fileName) as f:                       # reading the contents from the 
 plt.rcParams['axes.grid'] = True
 plt.style.use('dark_background')
 figure = plt.figure()                           # We want the figure to be created
-ax = figure.add_subplot(projection = '3d')      # We want to make this a 3D model
+#ax = figure.add_subplot(projection = '3d')      # We want to make this a 3D model
+ax = plt.axes(projection = '3d')
 # Making the graph look pretty
 ax.w_yaxis.pane.fill = False                    # Makes the pane the same color as the 
 ax.w_xaxis.pane.fill = False                    # ... background, so the data can be seen 
@@ -58,8 +60,8 @@ ax.set(zlim3d=(-30, 80), zlabel='Z')            # We may make the values
 # Constructing the Simulation --------------------------------------------------------------
 # Creating the times and constants
 G = 6.67359e-20                                 # (km**3/kg/s**2) The Gravity constant
-stepping  = 0.005
-maxTime = 40000                                 # The max amount of time we want to use for the simulation
+stepping  = 0.2
+maxTime = 200                                 # The max amount of time we want to use for the simulation
 numOfSteps = int(maxTime / stepping)            # the number of times we will have to show data 
 time = np.arange(0,maxTime, stepping)           # The time from 0 to maxTime in stepping
                                                 # ... increments
@@ -146,7 +148,7 @@ for i in range(len(masses)):
         posToDisp[i][j] = pos[j][i]
 
 # Making the animation ---------------------------------------------------------------------
-lines = plt.plot([])
+lines = plt.plot([],[])
 line = lines[0:2]
 
 def animate(num, pTD, numMasses):
@@ -154,15 +156,25 @@ def animate(num, pTD, numMasses):
     # > num: the number of the timestep we are in
     # > pTD: The positions to Display (The X,Y,Z coord)
     # > numMasses: The number of masses that need to be displayed
-    
+
+    ax.clear()                          # Note that this clears everything on the screen
     for m in range(len(numMasses)):
-        line.set_data(( pTD(m, num, 0),pTD(m, num, 1) ))
-        line.set_3d_properties((pTD(m, num, 2)))
+        ax.plot3D(pTD[m, :num+1, 0], pTD[m, :num+1, 1], pTD[m, :num+1, 2], c = colors[m])
+
+    # Setting the axes properties
+    ax.set(xlim3d=(-50, 250), xlabel='X')           # We can make the custom dimensions for the    
+    ax.set(ylim3d=(-30, 50), ylabel='Y')            # ... labels so that the graph shows up.
+    ax.set(zlim3d=(-30, 80), zlabel='Z')            # We may make the values
+    ax.set_title('Trajectory \nTime = ' + str(num) + ' sec')
+    
+    #for m in range(len(numMasses)):
+    #    line.set_data(( pTD(m, num, 0), pTD(m, num, 1) ))
+    #    line.set_3d_properties((pTD(m, num, 2)))
 
 makeAnimation = True
 
 if makeAnimation:
-    anim = animation.FuncAnimation(figure, animate, numOfSteps, fargs=(posToDisp, masses), interval = 1)
+    anim = animation.FuncAnimation(figure, animate, frames = numOfSteps, fargs=(posToDisp, masses), interval = 1, repeat = True)
 
 else:
     # print out the plot and the colors here
@@ -172,4 +184,4 @@ else:
 # Now we just show this to the screen and then close
 plt.axis('on')
 plt.show()
-plt.close()
+#plt.close()
