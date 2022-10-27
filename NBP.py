@@ -14,13 +14,19 @@
 # ... with a few masses at a time and not a cluster of masses as the article recommends
 # ... for a larger amount of masses, though it may be something that I attempt in the
 # ... future. Link: https://physics.princeton.edu//~fpretori/Nbody/intro.htm
-# ... Another Link: https://blbadger.github.io/3-body-problem.html 
+# ... Another Link: https://blbadger.github.io/3-body-problem.html
+
+# Now the basic program is done, work can begin on animating the graph and making the
+# ... program look good so the data can be better understood. Majorly, I want to update
+# ... the program to animate so that you can watch the bodies move, which I think is
+# ... much more helpful when trying to understand the motion of some masses in a system
 
 
 import os
 import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
 
 # Reading from a file ----------------------------------------------------------------------
@@ -40,21 +46,23 @@ with open(fileName) as f:                       # reading the contents from the 
 plt.rcParams['axes.grid'] = True
 plt.style.use('dark_background')
 figure = plt.figure()                           # We want the figure to be created
-ax = figure.add_subplot(projection = '3d')      # We want to make this a 3D model
+#ax = figure.add_subplot(projection = '3d')      # We want to make this a 3D model
+ax = plt.axes(projection = '3d')
 # Making the graph look pretty
 ax.w_yaxis.pane.fill = False                    # Makes the pane the same color as the 
 ax.w_xaxis.pane.fill = False                    # ... background, so the data can be seen 
 ax.w_zaxis.pane.fill = False                    # ... easier.
 # Setting the axes properties
-ax.set(xlim3d=(0, 250), xlabel='X')            # We can make the custom dimensions for the    
-ax.set(ylim3d=(-30, 30), ylabel='Y')           # ... labels so that the graph shows up.
-ax.set(zlim3d=(-30, 60), zlabel='Z')            # We may make the values 
+ax.set(xlim3d=(-50, 250), xlabel='X')           # We can make the custom dimensions for the    
+ax.set(ylim3d=(-30, 50), ylabel='Y')            # ... labels so that the graph shows up.
+ax.set(zlim3d=(-30, 80), zlabel='Z')            # We may make the values 
 
 # Constructing the Simulation --------------------------------------------------------------
 # Creating the times and constants
 G = 6.67359e-20                                 # (km**3/kg/s**2) The Gravity constant
-stepping  = 0.01
-maxTime = 20000                                  # The max amount of time we want to use for the simulation
+stepping  = 1   #0.2
+maxTime = 200                                   # The max amount of time we want to use for the simulation
+numOfSteps = int(maxTime / stepping)            # the number of times we will have to show data 
 time = np.arange(0,maxTime, stepping)           # The time from 0 to maxTime in stepping
                                                 # ... increments
 
@@ -139,12 +147,41 @@ for i in range(len(masses)):
     for j in range(maxTime):
         posToDisp[i][j] = pos[j][i]
 
-# print out the plot and the colors here
-for m in range(len(masses)):
-    plt.plot([i[0] for i in posToDisp[m]], [j[1] for j in posToDisp[m]], [k[2] for k in posToDisp[m]] , '^', color = colors[m], lw = 0.05, markersize = 0.01, alpha=0.5)
+# Making the animation ---------------------------------------------------------------------
+lines = plt.plot([],[])
+line = lines[0:2]
 
-plt.axis('on')
+def animate(num, pTD, numMasses):
+    # The arguments are:
+    # > num: the number of the timestep we are in
+    # > pTD: The positions to Display (The X,Y,Z coord)
+    # > numMasses: The number of masses that need to be displayed
+
+    ax.clear()                          # Note that this clears everything on the screen
+    for m in range(len(numMasses)):
+        ax.plot3D(pTD[m, :num+1, 0], pTD[m, :num+1, 1], pTD[m, :num+1, 2], c = colors[m], lw = 2)
+
+    # Setting the axes properties
+    ax.set(xlim3d=(-50, 250), xlabel='X')           # We can make the custom dimensions for the    
+    ax.set(ylim3d=(-30, 50), ylabel='Y')            # ... labels so that the graph shows up.
+    ax.set(zlim3d=(-30, 80), zlabel='Z')            # We may make the values
+    ax.set_title('Trajectory \nTime = ' + str(num) + ' sec')
+    
+    #for m in range(len(numMasses)):
+    #    line.set_data(( pTD(m, num, 0), pTD(m, num, 1) ))
+    #    line.set_3d_properties((pTD(m, num, 2)))
+
+makeAnimation = True
+
+if makeAnimation:
+    anim = animation.FuncAnimation(figure, animate, frames = numOfSteps, fargs=(posToDisp, masses), interval = 1, repeat = True)
+
+else:
+    # print out the plot and the colors here
+    for m in range(len(masses)):
+        plt.plot([i[0] for i in posToDisp[m]], [j[1] for j in posToDisp[m]], [k[2] for k in posToDisp[m]] , '-', color = colors[m], lw = 2.0, markersize = 0.1, alpha=1)
 
 # Now we just show this to the screen and then close
+plt.axis('on')
 plt.show()
-plt.close()
+#plt.close()
