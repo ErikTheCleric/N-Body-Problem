@@ -30,38 +30,67 @@
 # ... the program to animate so that you can watch the bodies move, which I think is
 # ... much more helpful when trying to understand the motion of some masses in a system
 
+# Some other simulations I would like to do:
+# > Barnes Hut is a much more optimized version of this brute force method, but done at a 
+#   different angle. The problem between this and the other model is that
+#   the Barnes Hut algorithm is 2 dimensional while the orgiinal model I created is 3D
+#   That means to accurately get the model running time compared to each other, we are going
+#   to have to omit a third dimension 
+
+# To run: py NBP_2.py --file_name InfoFile.txt --sim_type mpl
+
+# libraries
+from ast import parse
 import os
 import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation as animation
+from argparse import ArgumentParser
 
+# Global constants and variables
+GRAV_CONST = 6.67359e-20
+THREE_DIM = 3
+TWO_DIM = 2
 
+# classes and fuctions 
 class body:
     # The different masses that we will be testing on from the file, in the simulation
     def __init__(self, name, mass, pX0, vX0, color):
         self.name = name
         self.m = mass
-        self.p = pX0
-        self.v = vX0
+        self.p = np.zeros((1,THREE_DIM))
+        self.p[0] = pX0
+        self.v = np.zeros((1,THREE_DIM))
+        self.v[0] = vX0
         self.c = color
         pass
 
-    def print(self):
+    def printStats(self):
         print("Body", self.name, "> m:", self.m, " p:", self.p, " v:", self.v, " c:", self.c)
 
+    def resizePosAndVal(self, mt):
+        self.p.resize((mt, THREE_DIM))   # The positions for each point (x,y,z)
+        self.v.resize((mt, THREE_DIM))   # velocities for each point (x,y,z)
 
-class n_body_problem:
+
+class n_body_problem_bf_3d:
+    # N body problem brute force 3D
     def __init__(self, makeAni, stepping, maxTime, bodies):
-        self.makeAni = makeAni
-        self.stepping = stepping
-        self.maxTime = maxTime
+        self.animation = makeAni
+        self.stepping = float(stepping)
+        self.maxTime = int(maxTime)
         self.bodies = bodies
+        self.numsteps = (self.maxTime / self.stepping)
+        self.time = np.arange(0, self.maxTime, self.stepping)
+        # Resize the bodies pos and velocity vectors to hold the amount of time units to the maxtime
+        for b in self.bodies:
+            b.resizePosAndVal(self.maxTime)
         pass
 
-    def print(self):
-        print("N Body Sim > make animation:", self.makeAni, " stepping:", self.stepping, " maxTime:", self.maxTime, " num Bodies:", self.bodies.len())
+    def printStats(self):
+        print("N Body Sim > make animation:", self.animation, " stepping:", self.stepping, " maxTime:", self.maxTime, " num Bodies:", len(self.bodies))
 
 
 def fileReader(filename = "InfoFile.txt"):
@@ -89,7 +118,19 @@ def parser(data):
         b = body(n, m, p, v, c)
         bodies.append(b)
     
-    return makeAni,stepping,maxTime,bodies
+    return makeAni, stepping, maxTime, bodies
 
-d = fileReader()
-nbp = n_body_problem(parser(d))
+
+if __name__ == "__main__":
+    # Reading in arguments file name and the type of simulation
+    inputFromUser = ArgumentParser()
+    inputFromUser.add_argument("--file_name", help = "The file name you want to read")
+    inputFromUser.add_argument("--sim_type", help = "which simulation to perform: mpl, ...")
+    args = inputFromUser.parse_args()
+
+    d = fileReader(str(args.file_name))
+    mA, step, mT, b = parser(d)
+    nbp = n_body_problem_bf_3d(mA, step, mT, b)
+    nbp.printStats()
+    
+    
