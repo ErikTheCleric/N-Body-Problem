@@ -53,6 +53,9 @@ from argparse import ArgumentParser
 GRAV_CONST = 6.67359e-20
 THREE_DIM = 3
 TWO_DIM = 2
+X = 0
+Y = 1
+Z = 2
 
 # classes and fuctions 
 class body:
@@ -60,10 +63,11 @@ class body:
     def __init__(self, name, mass, pX0, vX0, color):
         self.name = name
         self.m = mass
-        self.p = np.zeros((1,THREE_DIM))
+        self.p = np.zeros((1,THREE_DIM))    # position
         self.p[0] = pX0
-        self.v = np.zeros((1,THREE_DIM))
+        self.v = np.zeros((1,THREE_DIM))    # velocity
         self.v[0] = vX0
+        self.a = np.zeros((1,THREE_DIM))    # acceleration
         self.c = color
         pass
 
@@ -73,6 +77,36 @@ class body:
     def resizePosAndVal(self, mt):
         self.p.resize((mt, THREE_DIM))   # The positions for each point (x,y,z)
         self.v.resize((mt, THREE_DIM))   # velocities for each point (x,y,z)
+
+class animation:
+    # A class to display a matlibplot graph
+    def __init__(self, show_axis_grid, dark_background, proj, panes):
+        plt.rcParams['axes.grid'] = show_axis_grid
+        if dark_background:
+            plt.style.use('dark_background')
+        figure = plt.figure()
+        ax = plt.axes(projection = proj)
+
+        ax.w_xaxis.pane.fill = panes
+        ax.set(xlabel = 'X')
+        ax.w_yaxis.pane.fill = panes
+        ax.set(ylabel = 'Y')
+        if proj == '3d':
+            ax.w_zaxis.pane.fill = panes
+            ax.set(zlabel = 'Z')
+    
+    def animate(self, timestep, ptd, bodies):
+        self.ax.clear()
+        for b in bodies:
+            # TODO FILL IN
+            self.ax.plot3D()
+    
+    def display(self, makeAni, steps, bodies):
+        if makeAni:
+            anim = animation.FuncAnimation(self.figure, self.animate, frames = steps, fargs = (bodies), interval = 1, repeat = True)
+        else:
+            for b in bodies:
+                plt.plot([],[],[], '-', color = bodies.c, lw = 2.0, markersize = 0.1, alpha=1)
 
 
 class n_body_problem_bf_3d:
@@ -89,6 +123,39 @@ class n_body_problem_bf_3d:
             b.resizePosAndVal(self.maxTime)
         pass
 
+    def accelCalc(self, time):
+        # Given a set of b (bodies), find the brute force derivation of x, y, and z
+        # This gives O(n^2) complexity as we have to compute how each body affects each other
+        for body1 in self.bodies:
+            for body2 in self.bodies:
+                if(body1 != body2):
+                    body1.a += -9.8 * body2.m * (body1.p[time] - body2.p[time]) / (np.sqrt((body1.p[time][X] - body2.p[time][X])**2 + (body1.p[time][Y] - body2.p[time][Y])**2 + (body1.p[time][Z] - body2.p[time][Z])**2)**3)
+        pass
+
+    def simulation(self):
+        # The actual code of the simulation
+        for currTimeStep in range(self.maxTime - 1):   
+            # Calculate the accelerations
+            self.accelCalc(currTimeStep)
+
+            for b in self.bodies:
+                # Update the next step of the velocity
+                b.v[currTimeStep + 1] = b.v[currTimeStep] + b.a * self.stepping
+
+                # Update the position values for the next step
+                b.p[currTimeStep + 1] = b.p[currTimeStep] + b.v[currTimeStep] * self.stepping
+        pass
+
+    #def animation(self, num, ptd, numMasses):
+        
+
+
+    def display(self):
+        # Show the animation or just the picture
+        pass
+            
+            
+    
     def printStats(self):
         print("N Body Sim > make animation:", self.animation, " stepping:", self.stepping, " maxTime:", self.maxTime, " num Bodies:", len(self.bodies))
 
@@ -125,12 +192,11 @@ if __name__ == "__main__":
     # Reading in arguments file name and the type of simulation
     inputFromUser = ArgumentParser()
     inputFromUser.add_argument("--file_name", help = "The file name you want to read")
-    inputFromUser.add_argument("--sim_type", help = "which simulation to perform: mpl, ...")
+    inputFromUser.add_argument("--sim_type", help = "which simulation to perform: mpl3, ...")
     args = inputFromUser.parse_args()
 
     d = fileReader(str(args.file_name))
     mA, step, mT, b = parser(d)
     nbp = n_body_problem_bf_3d(mA, step, mT, b)
-    nbp.printStats()
     
     
